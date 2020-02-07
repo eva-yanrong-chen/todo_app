@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -19,12 +19,18 @@ db.create_all()
 
 @app.route('/todos/create', methods=['POST'])
 def create_todo():
-    description = request.form.get('description', '') # the '' is a default empty string in case no text came in
+    #   description = request.form.get('description', '') # the '' is a default empty string in case no text came in
+    #   for AJAX request, we no longer uses html form to get our data
+    description = request.get_json()['description'] #   We will use get_json to get the dictionary
     todo = Todo(description=description)
     db.session.add(todo)
     db.session.commit()
     #   After adding new todo item to the table, the app will redirect to '/' route
-    return redirect(url_for('index'))
+    #   return redirect(url_for('index'))
+    #   Instead of redirecting, we will want to return a useful JSON object that includes the description
+    return jsonify({
+        'description': todo.description
+    })
 
 
 @app.route('/')
