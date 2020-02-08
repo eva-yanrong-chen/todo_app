@@ -70,5 +70,5 @@ def index():
     #   Specifying a html file from your templates folder when user visits
     # this route using render template
     #   We can also pass in variable with the html file in render_template
-    return render_template('index.html', data=Todo.query.all())
+    return render_template('index.html', data=Todo.query.order_by('id').all())
 
