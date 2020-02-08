@@ -9,6 +9,19 @@
                 list-style: none;
                 padding: 0;
                 margin: 0;
+                width: 200px;
+            }
+            li {
+                clear: both;
+            }
+            .delete-button {
+                background-color: transparent;
+                border: none;
+                outline: none;
+                color: red;
+                float: right;
+                cursor: pointer;
+                font-size: 20px;
             }
         </style>
     </head>
@@ -26,12 +39,28 @@
         
         <ul id="todos">
             {% for d in data %} <!-- This is a Jinja for loop -->
-            <li><input class="check-completed" data-id="{{ d.id }}" type="checkbox" {% if d.completed %} checked {% endif %}/> {{ d.description }} </li> 
+            <li>
+                <input class="check-completed" data-id="{{ d.id }}" type="checkbox" {% if d.completed %} checked {% endif %} /> 
+                {{ d.description }}
+                <button class="delete-button" data-id="{{ d.id }}">&cross;</button>
+            </li> 
             {% endfor %}
         </ul>
         
         <!-- Implementing AJAX data request: page doesn't refresh when new data is added -->
         <script>
+            const delete_buttons = document.querySelectorAll('.delete-button');
+            for (let i = 0; i < delete_buttons.length; i++) {
+                const delete_button = delete_buttons[i];
+                delete_button.onclick = function (e) {
+                    console.log('event', e);
+                    const todoId = e.target.dataset['id'];
+                    fetch('/todos/' + todoId, {
+                        method: 'DELETE'
+                    });
+                }
+            }
+
             const checkboxes = document.querySelectorAll('.check-completed');
             for (let i = 0; i < checkboxes.length; i++) {
                 const checkbox = checkboxes[i];
