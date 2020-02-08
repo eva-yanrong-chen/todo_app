@@ -43,11 +43,24 @@ def create_todo():
     if error:
         abort(400)
     else:
-        pass
         #   After adding new todo item to the table, the app will redirect to '/' route
         #   return redirect(url_for('index'))
         #   Instead of redirecting, we will want to return a useful JSON object that includes the description
         return jsonify(body)
+
+
+@app.route('/todos/<todo_id>/set-completed', methods=['POST'])
+def set_completed_todo(todo_id):
+    try:
+        completed = request.get_json()['completed']
+        todo = Todo.query.get(todo_id)
+        todo.completed = completed
+        db.session.commit()
+    except:
+        db.session.rollback()
+    finally:
+        db.session.close()
+    return redirect(url_for('index'))
 
 
 @app.route('/')
