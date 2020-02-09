@@ -23,29 +23,51 @@
                 cursor: pointer;
                 font-size: 20px;
             }
+            .lists-wrapper, .todos-wrapper {
+                display: inline-block;
+                vertical-align: top;
+            }
         </style>
     </head>
     <body>
-         <!-- <form method="POST" action="/todos/create">
-            method & action is no longer needed since we're implementing AJAX and preventing defult
-            behabiors at the script below -->
-        <form id="form"> 
-            <input type="text" id="description" name="description" />
-            <input type="submit" value="Create" />
-        </form>
-        
-        <!-- Error Message. Default: doesn't show -->
-        <div id="error" class="hidden">Something went wrong!</div>
-        
-        <ul id="todos">
-            {% for d in data %} <!-- This is a Jinja for loop -->
-            <li>
-                <input class="check-completed" data-id="{{ d.id }}" type="checkbox" {% if d.completed %} checked {% endif %} /> 
-                {{ d.description }}
-                <button class="delete-button" data-id="{{ d.id }}">&cross;</button>
-            </li> 
-            {% endfor %}
-        </ul>
+        <div class="lists-wrapper">
+            <ul id="lists">
+                <h3 >Lists</h3>
+                {% for list in lists %}
+                <!-- Wrap the list items into links to direct to the appropraite list url -->
+                <li>
+                    <a href="/lists/{{ list.id }}">
+                        {{ list.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="todos-wrapper">
+            <h4>{{ active_list.name }}</h4>
+            <!-- <form method="POST" action="/todos/create">
+                        method & action is no longer needed since we're implementing AJAX and preventing defult
+                        behabiors at the script below -->
+            <form id="form" data-list-id="{{ active_list.id }}">
+                <input type="text" id="description" name="description" />
+                <input type="submit" value="Create" />
+            </form>
+            
+            <!-- Error Message. Default: doesn't show -->
+            <div id="error" class="hidden">Something went wrong!</div>
+            
+            <ul id="todos">
+                {% for todo in todos %}
+                <!-- This is a Jinja for loop -->
+                <li>
+                    <input class="check-completed" data-id="{{ todo.id }}" type="checkbox" {% if todo.completed %} checked
+                        {% endif %} />
+                    {{ todo.description }}
+                    <button class="delete-button" data-id="{{ todo.id }}">&cross;</button>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
         
         <!-- Implementing AJAX data request: page doesn't refresh when new data is added -->
         <script>
@@ -86,13 +108,16 @@
                 }
             }
             document.getElementById('form').onsubmit = function (e) { // e is the event handler
+                console.log('event', e);
+                const list_id = e.target.dataset['listId'];
                 // prevent the default behabior
                 e.preventDefault();
                 // use fetch to send AJAX requests
                 fetch('/todos/create', {
                     method: "POST",
                     body: JSON.stringify({
-                        'description': document.getElementById('description').value
+                        'description': document.getElementById('description').value,
+                        'list_id': list_id
                     }),
                     // Specify content type header
                     headers: {

@@ -29,7 +29,7 @@ class TodoList(db.Model):
     todos = db.relationship('Todo', backref='list', cascade='all, delete-orphan')
 
     def __repr__(self):
-    return f'<TodoList {self.id} {self.name}>'
+        return f'<TodoList {self.id} {self.name}>'
 
 
 @app.route('/todos/create', methods=['POST'])
@@ -40,10 +40,12 @@ def create_todo():
         #   description = request.form.get('description', '') # the '' is a default empty string in case no text came in
         #   for AJAX request, we no longer uses html form to get our data
         description = request.get_json()['description'] #   We will use get_json to get the dictionary
-        todo = Todo(description=description)
+        list_id = request.get_json()['list_id']
+        todo = Todo(description=description, list_id=list_id)
         db.session.add(todo)
         db.session.commit()
         body['description'] = todo.description
+        body['list_id'] = todo.list_id
     except:
         error = True
         db.session.rollback()
@@ -84,12 +86,22 @@ def delete_todo(todo_id):
         db.session.close()
     return jsonify({'success': True})
 
+@app.route('/lists/<list_id>')
+def get_list_todos(list_id):
+    #   This method tells the view to show index.html; it tells the model to do a SELECT * FROM todos
+    #   Specifying a html file from your templates folder when user visits
+    #   this route using render template
+    #   We can also pass in variable with the html file in render_template
+    return render_template(
+        'index.html', 
+        lists=TodoList.query.all(),
+        active_list=TodoList.query.get(list_id),
+        todos=Todo.query.filter_by(list_id=list_id).order_by('id').all()
+    )
+
+
 @app.route('/')
 #   The index method is the controller
-#   It tells the view to show index.html; it tells the model to do a SELECT * FROM todos
+#   It redirects to get_list_todos method with list_id = 1
 def index():
-    #   Specifying a html file from your templates folder when user visits
-    # this route using render template
-    #   We can also pass in variable with the html file in render_template
-    return render_template('index.html', data=Todo.query.order_by('id').all())
-
+    return redirect(url_for('get_list_todos', list_id=1))
