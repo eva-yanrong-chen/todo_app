@@ -17,7 +17,7 @@ class Todo(db.Model):
     list_id = db.Column(db.Integer, db.ForeignKey('todolists.id'), nullable=False)
 
     def __repr__(self):
-        return f'<Todo: {self.id} {self.description}>'
+        return f'<Todo: {self.id} {self.description}, list{self.list_id}>'
 
 #   Since we're using Migrations, we won't need db.create_all() to sync our model anymore
 #   db.create_all()
@@ -26,7 +26,10 @@ class TodoList(db.Model):
     __tablename__='todolists'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), nullable=False)
-    todos = db.relationship('Todo', backref='list', lazy=True)
+    todos = db.relationship('Todo', backref='list', cascade='all, delete-orphan')
+
+    def __repr__(self):
+    return f'<TodoList {self.id} {self.name}>'
 
 
 @app.route('/todos/create', methods=['POST'])
