@@ -26,10 +26,31 @@ class TodoList(db.Model):
     __tablename__='todolists'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), nullable=False)
-    todos = db.relationship('Todo', backref='list', cascade='all, delete-orphan')
+    todos = db.relationship('Todo', backref='list')
 
     def __repr__(self):
         return f'<TodoList {self.id} {self.name}>'
+
+
+@app.route('/lists/create', methods=['POST'])
+def create_list():
+    error = False
+    body = {}
+    try:
+        name = request.get_json()['name']
+        list = TodoList(name=name)
+        db.session.add(list)
+        db.session.commit()
+        body['name'] = list.name
+    except:
+        error = True
+        db.session.rollback()
+    finally:
+        db.session.close()
+    if error:
+        abort(400)
+    else:
+        return jsonify(body)
 
 
 @app.route('/todos/create', methods=['POST'])
@@ -49,7 +70,6 @@ def create_todo():
     except:
         error = True
         db.session.rollback()
-        print(sys.exc_info())
     finally:
         db.session.close()
     if error:
@@ -73,6 +93,19 @@ def set_completed_todo(todo_id):
     finally:
         db.session.close()
     return redirect(url_for('index'))
+
+
+@app.route('/lists/<list_id>', methods=['DELETE'])
+def delete_list(list_id):
+    try:
+        Todo.query.filter_by(list_id=list_id).delete()
+        TodoList.query.filter_by(id=list_id).delete()
+        db.session.commit()
+    except:
+        db.session.rollback()
+    finally:
+        db.session.close()
+    return jsonify({'success': True})
 
 
 @app.route('/todos/<todo_id>', methods=['DELETE'])

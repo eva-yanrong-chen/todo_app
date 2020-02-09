@@ -1,6 +1,7 @@
 <html>
     <head>
         <title>Todo App</title>
+        <link rel="shortcut icon" href="">
         <style>
             .hidden {
                 display: none;
@@ -9,12 +10,12 @@
                 list-style: none;
                 padding: 0;
                 margin: 0;
-                width: 200px;
+                width: 300px;
             }
             li {
                 clear: both;
             }
-            .delete-button {
+            .delete-todo-button, .delete-list-button {
                 background-color: transparent;
                 border: none;
                 outline: none;
@@ -33,12 +34,17 @@
         <div class="lists-wrapper">
             <ul id="lists">
                 <h3 >Lists</h3>
+                <form id="add-list-form">
+                    <input type="text" id="listname" name="listname" />
+                    <input type="submit" value="Make a List" />
+                </form>
                 {% for list in lists %}
                 <!-- Wrap the list items into links to direct to the appropraite list url -->
                 <li>
                     <a href="/lists/{{ list.id }}">
                         {{ list.name }}
                     </a>
+                    <button class="delete-list-button" data-id="{{ list.id }}">&cross;</button>
                 </li>
                 {% endfor %}
             </ul>
@@ -48,7 +54,7 @@
             <!-- <form method="POST" action="/todos/create">
                         method & action is no longer needed since we're implementing AJAX and preventing defult
                         behabiors at the script below -->
-            <form id="form" data-list-id="{{ active_list.id }}">
+            <form id="add-todo-form" data-list-id="{{ active_list.id }}">
                 <input type="text" id="description" name="description" />
                 <input type="submit" value="Create" />
             </form>
@@ -63,7 +69,7 @@
                     <input class="check-completed" data-id="{{ todo.id }}" type="checkbox" {% if todo.completed %} checked
                         {% endif %} />
                     {{ todo.description }}
-                    <button class="delete-button" data-id="{{ todo.id }}">&cross;</button>
+                    <button class="delete-todo-button" data-id="{{ todo.id }}">&cross;</button>
                 </li>
                 {% endfor %}
             </ul>
@@ -71,10 +77,22 @@
         
         <!-- Implementing AJAX data request: page doesn't refresh when new data is added -->
         <script>
-            const delete_buttons = document.querySelectorAll('.delete-button');
-            for (let i = 0; i < delete_buttons.length; i++) {
-                const delete_button = delete_buttons[i];
-                delete_button.onclick = function (e) {
+            const delete_list_buttons = document.querySelectorAll('.delete-list-button');
+                for (let i = 0; i < delete_list_buttons.length; i++) {
+                    const delete_list_button = delete_list_buttons[i];
+                    delete_list_button.onclick = function (e) {
+                        console.log('event', e);
+                        const listId = e.target.dataset['id'];
+                        fetch('/lists/' + listId, {
+                            method: 'DELETE'
+                        });
+                    }
+                }
+
+            const delete_todo_buttons = document.querySelectorAll('.delete-todo-button');
+            for (let i = 0; i < delete_todo_buttons.length; i++) {
+                const delete_todo_button = delete_todo_buttons[i];
+                delete_todo_button.onclick = function (e) {
                     console.log('event', e);
                     const todoId = e.target.dataset['id'];
                     fetch('/todos/' + todoId, {
@@ -107,7 +125,35 @@
                     })
                 }
             }
-            document.getElementById('form').onsubmit = function (e) { // e is the event handler
+            
+            document.getElementById('add-list-form').onsubmit = function (e) {
+                e.preventDefault;
+                fetch('/lists/create', {
+                    method: "POST",
+                    body: JSON.stringify({
+                        'name': document.getElementById('listname').value
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (jsonResponse) {
+                    // Append the newly created object to the todolists
+                    const liItem = document.createElement('LI');
+                    liItem.innerHTML = jsonResponse['name'];
+                    document.getElementById('lists').appendChild(liItem);
+                    document.getElementById('error').className = 'hidden';
+                })
+                //  Catch handler to displays error message when something goes wrong
+                .catch(function () {
+                    document.getElementById('error').className = '';
+                })
+            }
+
+            document.getElementById('add-todo-form').onsubmit = function (e) { // e is the event handler
                 console.log('event', e);
                 const list_id = e.target.dataset['listId'];
                 // prevent the default behabior
